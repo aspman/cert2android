@@ -1,0 +1,65 @@
+#!/bin/bash
+#------------------------------------------------------------------------------
+#
+# cert2android
+#
+# Copyright 2014 Rob Ambidge
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#
+#------------------------------------------------------------------------------
+
+CERTNAME=$1			# Certificate file from cmd
+SUB_HASH=" -subject_hash_old"	# Required for compatibility with OpenSSL versions
+OSSL_NEW=1			# Version that requires old subject hash parameter
+
+if [ ! $CERTNAME ]	# Fallback in case name wasn't given
+	then
+		echo "Please type the certificate name as an arguement."
+		echo "eg ./androidcert root.crt"
+		echo -n ": "
+		read CERTNAME
+fi
+
+			# Now check that it actually exists and moan if it doesn't
+if [ ! -e $CERTNAME ]
+	then
+		echo "$CERTNAME not found."
+		echo "Please place in current directory"
+		echo "currently $PWD"
+		echo "and run this script again."
+		exit 0
+fi
+
+# Before running openssl, we need to check openssl version (compatability issue)
+OSSL_VER=$(openssl version | awk '{print $2}' | head -c1)
+if [ $((OSSL_VER)) -lt $((OSSL_NEW)) ]
+	then
+		SUB_HASH=" -subject_hash"
+fi
+
+# Let's get some hash
+HASH=$(openssl x509 -inform PEM$SUB_HASH -in $CERTNAME | head -1)
+
+
+# Build the file now
+CONVERTED_PEM="$HASH.0"
+cat $CERTNAME > $CONVERTED_PEM
+openssl x509 -inform PEM -text -in $CERTNAME -out /dev/null >> $CONVERTED_PEM
+
+# Confirm end of script like a gentleman
+echo "Certificate is now androidified!"
+echo "You can now install $CONVERTED_PEM in your device's"
+echo "/system/etc/security/cacerts/ folder."
+
+exit 0
