@@ -55,7 +55,7 @@ HASH=$(openssl x509 -inform PEM$SUB_HASH -in $CERTNAME | head -1)
 # Build the file now
 CONVERTED_PEM="$HASH.0"
 cat $CERTNAME > $CONVERTED_PEM
-openssl x509 -inform PEM -text -in $CERTNAME -out /dev/null >> $CONVERTED_PEM
+openssl x509 -in $CERTNAME -noout -text >> $CONVERTED_PEM
 
 # Confirm end of script like a gentleman
 echo "Certificate is now androidified!"
